@@ -4,7 +4,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/kokto1000-prog.github.io/', // Svarīgi: slīpsvītras sākumā un beigās
   plugins: [
     react(),
     VitePWA({
