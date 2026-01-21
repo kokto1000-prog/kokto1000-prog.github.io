@@ -8,7 +8,7 @@ import AddEntryForm from './components/AddEntryForm';
 import DateSelector from './components/DateSelector';
 import SalaryCalculator from './components/SalaryCalculator';
 import { getEntries, addEntry, deleteEntry, calculateMonthlyTotal, getMonthMetadata, getAllMetadata, getBalanceCorrection, saveBalanceCorrection, TRANSACTION_TYPES } from './utils/salaryStorage';
-import { exportToExcel } from './utils/exportUtils';
+import { exportYearlyReport, updateExcelReport } from './utils/exportUtils';
 
 function App() {
   const [allEntries, setAllEntries] = useState([]);
@@ -147,22 +147,26 @@ function App() {
   };
 
   const handleExport = () => {
-    const totalReceived = transferTotal + cashTotal;
-    const balance = expectedTotal - totalReceived;
-    const finalBalance = balance + (cumulativeBalance || 0) + (balanceCorrection || 0);
+    exportYearlyReport(
+      selectedDate.getFullYear(),
+      allEntries,
+      getAllMetadata(),
+      balanceCorrection
+    );
+  };
 
-    const summaryData = {
-      expectedTotal,
-      transferTotal,
-      cashTotal,
-      receivedTotal: totalReceived,
-      balance, // Mēneša bilance
-      cumulativeBalance, // Uzkrātais
-      balanceCorrection,
-      finalBalance
-    };
-
-    exportToExcel(filteredEntries, summaryData);
+  const handleUpdateFile = async (file) => {
+    try {
+      await updateExcelReport(
+        file,
+        selectedDate.getFullYear(),
+        allEntries,
+        getAllMetadata(),
+        balanceCorrection
+      );
+    } catch (error) {
+      alert('Neizdevās atjaunināt failu. Pārbaudiet vai tas ir pareizais fails.');
+    }
   };
 
   const handleDelete = (id) => {
@@ -185,7 +189,11 @@ function App() {
 
   return (
     <div className="container">
-      <Header onOpenCalculator={() => setShowCalculator(true)} onExport={handleExport} />
+      <Header
+        onOpenCalculator={() => setShowCalculator(true)}
+        onExport={handleExport}
+        onUpdateFile={handleUpdateFile}
+      />
 
       {showCalculator ? (
         <SalaryCalculator onClose={() => setShowCalculator(false)} />
