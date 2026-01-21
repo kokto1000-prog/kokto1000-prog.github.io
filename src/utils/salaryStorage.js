@@ -37,6 +37,27 @@ export const deleteEntry = (id) => {
     return filtered;
 };
 
+const CORRECTION_KEY = 'maks_balance_correction_v1';
+
+export const getBalanceCorrection = () => {
+    try {
+        const data = localStorage.getItem(CORRECTION_KEY);
+        return data ? Number(data) : 0;
+    } catch (error) {
+        console.error('Error reading correction', error);
+        return 0;
+    }
+};
+
+export const saveBalanceCorrection = (amount) => {
+    try {
+        localStorage.setItem(CORRECTION_KEY, amount.toString());
+        return Number(amount);
+    } catch (error) {
+        console.error('Error saving correction', error);
+    }
+};
+
 const METADATA_KEY = 'maks_salary_metadata_v1';
 
 export const getMonthMetadata = (year, month) => {

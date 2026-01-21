@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Header = ({ onOpenCalculator }) => {
+const Header = ({ onOpenCalculator, onExport }) => {
     return (
         <header style={{
             display: 'flex',
@@ -34,6 +34,26 @@ const Header = ({ onOpenCalculator }) => {
                         <line x1="8" y1="14" x2="16" y2="14" />
                         <line x1="12" y1="10" x2="12" y2="18" />
                         <line x1="8" y1="18" x2="16" y2="18" />
+                    </svg>
+                </button>
+                <button
+                    onClick={onExport}
+                    style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: 'rgba(51, 65, 85, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0
+                    }}
+                    title="Lejuplādēt Excel"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
                 </button>
                 <div style={{

@@ -7,7 +7,8 @@ import EntryList from './components/EntryList';
 import AddEntryForm from './components/AddEntryForm';
 import DateSelector from './components/DateSelector';
 import SalaryCalculator from './components/SalaryCalculator';
-import { getEntries, addEntry, deleteEntry, calculateMonthlyTotal, getMonthMetadata, getAllMetadata, TRANSACTION_TYPES } from './utils/salaryStorage';
+import { getEntries, addEntry, deleteEntry, calculateMonthlyTotal, getMonthMetadata, getAllMetadata, getBalanceCorrection, saveBalanceCorrection, TRANSACTION_TYPES } from './utils/salaryStorage';
+import { exportToExcel } from './utils/exportUtils';
 
 function App() {
   const [allEntries, setAllEntries] = useState([]);
@@ -22,12 +23,15 @@ function App() {
   const [transferTotal, setTransferTotal] = useState(0);
   const [cashTotal, setCashTotal] = useState(0);
   const [cumulativeBalance, setCumulativeBalance] = useState(0);
+  const [balanceCorrection, setBalanceCorrection] = useState(0);
 
   const [rate, setRate] = useState(0);
   const [hours, setHours] = useState(0);
 
   useEffect(() => {
     loadData();
+    const correction = getBalanceCorrection();
+    setBalanceCorrection(correction);
   }, []);
 
   useEffect(() => {
@@ -49,6 +53,12 @@ function App() {
   const handleWorkDataChange = (data) => {
     setRate(data.rate);
     setHours(data.hours);
+  };
+
+  const handleCorrectionChange = (newAmount) => {
+    const val = Number(newAmount);
+    setBalanceCorrection(val);
+    saveBalanceCorrection(val);
   };
 
   const filterData = () => {
@@ -136,6 +146,25 @@ function App() {
     setShowAddForm(false);
   };
 
+  const handleExport = () => {
+    const totalReceived = transferTotal + cashTotal;
+    const balance = expectedTotal - totalReceived;
+    const finalBalance = balance + (cumulativeBalance || 0) + (balanceCorrection || 0);
+
+    const summaryData = {
+      expectedTotal,
+      transferTotal,
+      cashTotal,
+      receivedTotal: totalReceived,
+      balance, // Mēneša bilance
+      cumulativeBalance, // Uzkrātais
+      balanceCorrection,
+      finalBalance
+    };
+
+    exportToExcel(filteredEntries, summaryData);
+  };
+
   const handleDelete = (id) => {
     if (confirm('Vai tiešām dzēst šo ierakstu?')) {
       deleteEntry(id);
@@ -156,7 +185,7 @@ function App() {
 
   return (
     <div className="container">
-      <Header onOpenCalculator={() => setShowCalculator(true)} />
+      <Header onOpenCalculator={() => setShowCalculator(true)} onExport={handleExport} />
 
       {showCalculator ? (
         <SalaryCalculator onClose={() => setShowCalculator(false)} />
@@ -173,6 +202,8 @@ function App() {
             cashTotal={cashTotal}
             expectedTotal={expectedTotal}
             cumulativeBalance={cumulativeBalance}
+            balanceCorrection={balanceCorrection}
+            onCorrectionChange={handleCorrectionChange}
             label={getSummaryLabel()}
           />
 

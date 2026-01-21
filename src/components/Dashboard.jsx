@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const Dashboard = ({ receivedTotal, transferTotal = 0, cashTotal = 0, expectedTotal, cumulativeBalance = 0, label }) => {
+const Dashboard = ({ receivedTotal, transferTotal = 0, cashTotal = 0, expectedTotal, cumulativeBalance = 0, balanceCorrection = 0, onCorrectionChange, label }) => {
+    const [isEditingCorrection, setIsEditingCorrection] = useState(false);
+    const [tempCorrection, setTempCorrection] = useState(balanceCorrection.toString());
+
     // Formula: Iekšā = Pienākas - (Neto + Uz rokas)
     // "Saņemts" section now shows sum of Neto (Transfer) and Uz rokas (Cash)
     const totalReceived = transferTotal + cashTotal;
     const balance = expectedTotal - totalReceived;
 
-    const isPositive = balance > 0; // Means we are owed money (positive "Iekšā")
-    const isNegative = balance < 0; // Means we were overpaid
+    const finalBalance = balance + (cumulativeBalance || 0) + (balanceCorrection || 0);
+
+    const isPositive = finalBalance > 0; // Means we are owed money (positive "Iekšā")
+    const isNegative = finalBalance < 0; // Means we were overpaid
+
+    const handleSaveCorrection = () => {
+        if (onCorrectionChange) {
+            onCorrectionChange(tempCorrection);
+        }
+        setIsEditingCorrection(false);
+    };
 
     return (
         <div className="glass-card animate-enter" style={{
@@ -58,31 +70,98 @@ const Dashboard = ({ receivedTotal, transferTotal = 0, cashTotal = 0, expectedTo
 
             {/* Balance (Iekšā / Atlikums) */}
             <div style={{ textAlign: 'center' }}>
-                <p style={{
-                    fontSize: '0.9rem',
-                    color: 'var(--text-secondary)',
-                    marginBottom: '0.5rem',
+                <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    marginBottom: '0.5rem'
                 }}>
-                    Iekšā (Atlikums)
-                </p>
-                <h2 style={{
-                    fontSize: '2.5rem',
-                    fontWeight: '800',
-                    margin: 0,
-                    color: isPositive ? 'var(--accent-cash)' : (isNegative ? 'var(--text-muted)' : 'var(--text-primary)'),
-                    textShadow: isPositive ? '0 0 20px rgba(245, 158, 11, 0.3)' : 'none'
-                }}>
-                    € {(balance + (cumulativeBalance || 0)).toFixed(2)}
-                </h2>
-                {cumulativeBalance !== 0 && (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                        (Mēnesī: {balance > 0 ? '+' : ''}{balance.toFixed(2)} | Iepriekš: {cumulativeBalance > 0 ? '+' : ''}{cumulativeBalance.toFixed(2)})
+                    <p style={{
+                        fontSize: '0.9rem',
+                        color: 'var(--text-secondary)',
+                        margin: 0
+                    }}>
+                        Iekšā (Atlikums)
                     </p>
+                    <button
+                        onClick={() => {
+                            setTempCorrection(balanceCorrection.toString());
+                            setIsEditingCorrection(!isEditingCorrection);
+                        }}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: 0.7
+                        }}
+                        title="Labot korekciju"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                {isEditingCorrection ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <input
+                            type="number"
+                            value={tempCorrection}
+                            onChange={(e) => setTempCorrection(e.target.value)}
+                            style={{
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid var(--text-muted)',
+                                color: 'white',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '4px',
+                                width: '80px',
+                                textAlign: 'center'
+                            }}
+                            autoFocus
+                        />
+                        <button
+                            onClick={handleSaveCorrection}
+                            style={{
+                                background: 'var(--primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '0.25rem 0.5rem',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem'
+                            }}
+                        >
+                            OK
+                        </button>
+                    </div>
+                ) : (
+                    <h2 style={{
+                        fontSize: '2.5rem',
+                        fontWeight: '800',
+                        margin: 0,
+                        color: isPositive ? 'var(--accent-cash)' : (isNegative ? 'var(--text-muted)' : 'var(--text-primary)'),
+                        textShadow: isPositive ? '0 0 20px rgba(245, 158, 11, 0.3)' : 'none'
+                    }}>
+                        € {finalBalance.toFixed(2)}
+                    </h2>
                 )}
+
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                    {(cumulativeBalance !== 0 || balanceCorrection !== 0) && (
+                        <span>
+                            (Mēnesī: {balance > 0 ? '+' : ''}{balance.toFixed(2)}
+                            {cumulativeBalance !== 0 && ` | Iepriekš: ${cumulativeBalance > 0 ? '+' : ''}${cumulativeBalance.toFixed(2)}`}
+                            {balanceCorrection !== 0 && ` | Korekcija: ${balanceCorrection > 0 ? '+' : ''}${balanceCorrection.toFixed(2)}`}
+                            )
+                        </span>
+                    )}
+                </div>
             </div>
 
         </div>
