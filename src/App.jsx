@@ -27,6 +27,9 @@ function App() {
 
   const [rate, setRate] = useState(0);
   const [hours, setHours] = useState(0);
+  // Tax params (used for display calc in Dashboard)
+  const [dependents, setDependents] = useState(0);
+  const [hasBook, setHasBook] = useState(true);
 
   useEffect(() => {
     loadData();
@@ -48,11 +51,16 @@ function App() {
     const meta = getMonthMetadata(selectedDate.getFullYear(), selectedDate.getMonth());
     setRate(meta.rate || 0);
     setHours(meta.hours || 0);
+    // Load tax params if available, otherwise defaults
+    setDependents(meta.dependents || 0);
+    setHasBook(meta.hasBook !== undefined ? meta.hasBook : true);
   };
 
   const handleWorkDataChange = (data) => {
     setRate(data.rate);
     setHours(data.hours);
+    if (data.dependents !== undefined) setDependents(data.dependents);
+    if (data.hasBook !== undefined) setHasBook(data.hasBook);
   };
 
   const handleCorrectionChange = (newAmount) => {
@@ -125,15 +133,23 @@ function App() {
         const hours = meta.hours || 0;
         const expected = rate * hours;
 
-        const received = allEntries.reduce((total, entry) => {
+        let mTransfer = 0;
+        let mCash = 0;
+
+        allEntries.forEach(entry => {
           const d = new Date(entry.date);
           if (d.getFullYear() === year && d.getMonth() === month) {
-            return total + Number(entry.amount);
+            if (entry.type === TRANSACTION_TYPES.CASH) {
+              mCash += Number(entry.amount);
+            } else {
+              mTransfer += Number(entry.amount);
+            }
           }
-          return total;
-        }, 0);
+        });
 
-        previousBalance += (expected - received);
+        // Formula: Pienākas - Bruto - Uz rokas + Korekcija (handled later)
+        // Assuming Transfer = Bruto
+        previousBalance += (expected - mTransfer - mCash);
       }
     });
 
@@ -155,19 +171,7 @@ function App() {
     );
   };
 
-  const handleUpdateFile = async (file) => {
-    try {
-      await updateExcelReport(
-        file,
-        selectedDate.getFullYear(),
-        allEntries,
-        getAllMetadata(),
-        balanceCorrection
-      );
-    } catch (error) {
-      alert('Neizdevās atjaunināt failu. Pārbaudiet vai tas ir pareizais fails.');
-    }
-  };
+
 
   const handleDelete = (id) => {
     if (confirm('Vai tiešām dzēst šo ierakstu?')) {
@@ -192,7 +196,6 @@ function App() {
       <Header
         onOpenCalculator={() => setShowCalculator(true)}
         onExport={handleExport}
-        onUpdateFile={handleUpdateFile}
       />
 
       {showCalculator ? (
@@ -213,6 +216,8 @@ function App() {
             balanceCorrection={balanceCorrection}
             onCorrectionChange={handleCorrectionChange}
             label={getSummaryLabel()}
+            dependents={dependents}
+            hasBook={hasBook}
           />
 
           <div style={{ marginTop: '1.5rem' }}>
@@ -246,7 +251,7 @@ function App() {
             </button>
           </div>
 
-          <EntryList entries={filteredEntries} onDelete={handleDelete} />
+          <EntryList entries={filteredEntries} onDelete={handleDelete} dependents={dependents} hasBook={hasBook} />
         </>
       ) : (
         <div className="glass-card animate-enter">

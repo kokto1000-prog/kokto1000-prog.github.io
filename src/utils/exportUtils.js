@@ -72,6 +72,12 @@ export const exportYearlyReport = (year, allEntries, allMetadata, balanceCorrect
         summaryRows.push(['', '', '', '', '', '', '', '']);
         summaryRows.push(['Korekcija', '', '', '', '', '', '', balanceCorrection.toFixed(2)]);
         summaryRows.push(['GALA BILANCE', '', '', '', '', '', '', finalBalance.toFixed(2)]);
+        summaryRows.push(['', '', '', '', '', '', '', '']);
+
+        // Add Timestamp
+        const now = new Date();
+        const timeStr = now.toLocaleString('lv-LV', { hour12: false });
+        summaryRows.push(['Ģenerēts:', timeStr, '', '', '', '', '', '']);
 
 
         // 2. Prepare All Entries for Year
@@ -99,7 +105,10 @@ export const exportYearlyReport = (year, allEntries, allMetadata, balanceCorrect
         XLSX.utils.book_append_sheet(wb, wsEntries, "Visi Ieraksti");
 
         // 4. Save
-        const fileName = `Maks_Parskats_${year}.xlsx`;
+        const nowFileName = new Date();
+        const dateStrFileName = nowFileName.toISOString().split('T')[0];
+        const timeStrFileName = nowFileName.toTimeString().split(' ')[0].replace(/:/g, '-');
+        const fileName = `Maks_Parskats_${year}_${dateStrFileName}_${timeStrFileName}.xlsx`;
         XLSX.writeFile(wb, fileName);
 
         return true;
@@ -184,6 +193,12 @@ export const updateExcelReport = (file, year, allEntries, allMetadata, balanceCo
                 summaryRows.push(['', '', '', '', '', '', '', '']);
                 summaryRows.push(['Korekcija', '', '', '', '', '', '', balanceCorrection.toFixed(2)]);
                 summaryRows.push(['GALA BILANCE', '', '', '', '', '', '', finalBalance.toFixed(2)]);
+                summaryRows.push(['', '', '', '', '', '', '', '']);
+
+                // Add Timestamp
+                const now = new Date();
+                const timeStr = now.toLocaleString('lv-LV', { hour12: false });
+                summaryRows.push(['Ģenerēts:', timeStr, '', '', '', '', '', '']);
 
                 // 2. Prepare All Entries
                 const yearlyEntries = allEntries
@@ -228,12 +243,11 @@ export const updateExcelReport = (file, year, allEntries, allMetadata, balanceCo
                 XLSX.utils.book_append_sheet(wb, wsSummary, "Gada Kopsavilkums");
                 XLSX.utils.book_append_sheet(wb, wsEntries, "Visi Ieraksti");
 
+                XLSX.utils.book_append_sheet(wb, wsEntries, "Visi Ieraksti");
+
                 // 4. Save
-                // Create a name indicating update
-                const nameParts = file.name.split('.');
-                const ext = nameParts.pop();
-                const baseName = nameParts.join('.');
-                const newName = `${baseName}_updated.${ext}`;
+                // Use original name to trigger browser's "Overwrite?" prompt
+                const newName = file.name;
 
                 XLSX.writeFile(wb, newName);
                 resolve(true);

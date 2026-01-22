@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
+import { calculateNetFromBruto } from '../utils/taxCalculator';
 
-const Dashboard = ({ receivedTotal, transferTotal = 0, cashTotal = 0, expectedTotal, cumulativeBalance = 0, balanceCorrection = 0, onCorrectionChange, label }) => {
+const Dashboard = ({ receivedTotal, transferTotal = 0, cashTotal = 0, expectedTotal, cumulativeBalance = 0, balanceCorrection = 0, onCorrectionChange, label, dependents = 0, hasBook = true }) => {
     const [isEditingCorrection, setIsEditingCorrection] = useState(false);
     const [tempCorrection, setTempCorrection] = useState(balanceCorrection.toString());
 
-    // Formula: Iekšā = Pienākas - (Neto + Uz rokas)
-    // "Saņemts" section now shows sum of Neto (Transfer) and Uz rokas (Cash)
-    const totalReceived = transferTotal + cashTotal;
-    const balance = expectedTotal - totalReceived;
+    // Formula: Iekšā = Pienākas - Bruto - Uz rokas + Korekcija
+    // transferTotal is Bruto. cashTotal is Cash (Net).
+    // Saņemts (Display) should be Net = Net(Transfer) + Cash
+
+    // We assume transferTotal is Bruto. Calculate Net for display.
+    const netTransfer = calculateNetFromBruto(transferTotal, dependents, hasBook);
+    const totalReceived = netTransfer + cashTotal;
+
+    const balance = expectedTotal - transferTotal - cashTotal;
 
     const finalBalance = balance + (cumulativeBalance || 0) + (balanceCorrection || 0);
 
@@ -40,7 +46,7 @@ const Dashboard = ({ receivedTotal, transferTotal = 0, cashTotal = 0, expectedTo
                 </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', position: 'relative', zIndex: 1, marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', position: 'relative', zIndex: 1, marginBottom: '1rem' }}>
                 {/* Expected (Pienākas) */}
                 <div style={{ textAlign: 'center' }}>
                     <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Pienākas</p>
@@ -49,13 +55,7 @@ const Dashboard = ({ receivedTotal, transferTotal = 0, cashTotal = 0, expectedTo
                     </p>
                 </div>
 
-                {/* Received (Bruto -> Neto) */}
-                <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Neto</p>
-                    <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--accent-transfer)' }}>
-                        € {transferTotal.toFixed(2)}
-                    </p>
-                </div>
+
 
                 {/* Received (Summa) */}
                 <div style={{ textAlign: 'center' }}>

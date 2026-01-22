@@ -1,7 +1,6 @@
 import React from 'react';
 
-const Header = ({ onOpenCalculator, onExport, onUpdateFile }) => {
-    const fileInputRef = React.useRef(null);
+const Header = ({ onOpenCalculator, onExport }) => {
 
     return (
         <header style={{
@@ -38,39 +37,7 @@ const Header = ({ onOpenCalculator, onExport, onUpdateFile }) => {
                         <line x1="8" y1="18" x2="16" y2="18" />
                     </svg>
                 </button>
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: 'rgba(51, 65, 85, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0
-                    }}
-                    title="Atjaunināt Excel failu"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"></path>
-                    </svg>
-                </button>
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                            onUpdateFile(e.target.files[0]);
-                            e.target.value = ''; // Reset so we can select same file again if needed
-                        }
-                    }}
-                    style={{ display: 'none' }}
-                    accept=".xlsx"
-                />
+
                 <button
                     onClick={onExport}
                     style={{

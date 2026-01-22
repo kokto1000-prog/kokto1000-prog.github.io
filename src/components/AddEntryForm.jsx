@@ -31,7 +31,8 @@ const AddEntryForm = ({ onAdd, onClose }) => {
         let finalType = TRANSACTION_TYPES.TRANSFER; // Default for NET and BRUTO
 
         if (inputMode === 'BRUTO') {
-            finalAmount = calculatedNet;
+            // Keep the gross amount as is
+            finalAmount = parseFloat(amount);
             if (!finalDesc) {
                 finalDesc = `Alga (No Bruto: ${amount}€)`;
             }

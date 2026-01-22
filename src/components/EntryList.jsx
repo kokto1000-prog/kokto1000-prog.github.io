@@ -1,7 +1,8 @@
 import React from 'react';
+import { calculateNetFromBruto } from '../utils/taxCalculator';
 import { TRANSACTION_TYPES } from '../utils/salaryStorage';
 
-const EntryList = ({ entries, onDelete }) => {
+const EntryList = ({ entries, onDelete, dependents = 0, hasBook = true }) => {
     if (entries.length === 0) {
         return (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -58,7 +59,13 @@ const EntryList = ({ entries, onDelete }) => {
                         </div>
 
                         <div style={{ textAlign: 'right' }}>
-                            <p style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>+ €{Number(entry.amount).toFixed(2)}</p>
+                            <p style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                + €{
+                                    entry.description && entry.description.includes('No Bruto')
+                                        ? calculateNetFromBruto(entry.amount, dependents, hasBook)
+                                        : Number(entry.amount).toFixed(2)
+                                }
+                            </p>
                             <button
                                 onClick={() => onDelete(entry.id)}
                                 style={{
