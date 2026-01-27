@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TRANSACTION_TYPES } from '../utils/salaryStorage';
+import { TRANSACTION_TYPES } from '../services/db';
 import { calculateNetFromBruto } from '../utils/taxCalculator';
 
 const AddEntryForm = ({ onAdd, onClose }) => {

@@ -1,31 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { getMonthMetadata, saveMonthMetadata } from '../utils/salaryStorage';
 
-const WorkData = ({ date, onDataChange }) => {
-    const [rate, setRate] = useState('');
-    const [hours, setHours] = useState('');
+const WorkData = ({ rate: propRate, hours: propHours, onSave }) => {
+    const [rate, setRate] = useState(propRate || '');
+    const [hours, setHours] = useState(propHours || '');
 
     useEffect(() => {
-        // Load data when date changes
-        const meta = getMonthMetadata(date.getFullYear(), date.getMonth());
-        setRate(meta.rate || '');
-        setHours(meta.hours || '');
-        // Notify parent of initial load (including inherited rate)
-        if (onDataChange) onDataChange(meta);
-    }, [date]);
+        setRate(propRate || '');
+        setHours(propHours || '');
+    }, [propRate, propHours]);
 
     const handleRateChange = (val) => {
-        const newRate = parseFloat(val);
         setRate(val);
-        saveMonthMetadata(date.getFullYear(), date.getMonth(), { rate: newRate });
-        if (onDataChange) onDataChange({ rate: newRate, hours: parseFloat(hours) || 0 });
+        const newRate = parseFloat(val);
+        // Debouncing could be good here, but for now direct call
+        if (onSave) onSave({ rate: newRate, hours: parseFloat(hours) || 0 });
     };
 
     const handleHoursChange = (val) => {
-        const newHours = parseFloat(val);
         setHours(val);
-        saveMonthMetadata(date.getFullYear(), date.getMonth(), { hours: newHours });
-        if (onDataChange) onDataChange({ rate: parseFloat(rate) || 0, hours: newHours });
+        const newHours = parseFloat(val);
+        if (onSave) onSave({ rate: parseFloat(rate) || 0, hours: newHours });
     };
 
     return (

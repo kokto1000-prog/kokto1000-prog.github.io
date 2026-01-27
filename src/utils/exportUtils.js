@@ -15,7 +15,7 @@ export const exportYearlyReport = (year, allEntries, allMetadata, balanceCorrect
         let yearlyBalance = 0;
 
         // Header for Summary
-        summaryRows.push(['Mēnesis', 'Likme', 'Stundas', 'Pienākas', 'Neto', 'Uz rokas', 'Kopā saņemts', 'Bilance']);
+        summaryRows.push(['Mēnesis', 'Likme', 'Stundas', 'Pienākas', 'Bruto', 'Uz rokas', 'Kopā saņemts', 'Bilance']);
 
         for (let month = 0; month < 12; month++) {
             // Get Metadata
@@ -144,7 +144,7 @@ export const updateExcelReport = (file, year, allEntries, allMetadata, balanceCo
                 let yearlyBalance = 0;
 
                 // Header for Summary
-                summaryRows.push(['Mēnesis', 'Likme', 'Stundas', 'Pienākas', 'Neto', 'Uz rokas', 'Kopā saņemts', 'Bilance']);
+                summaryRows.push(['Mēnesis', 'Likme', 'Stundas', 'Pienākas', 'Bruto', 'Uz rokas', 'Kopā saņemts', 'Bilance']);
 
                 for (let month = 0; month < 12; month++) {
                     const key = `${year}-${month}`;
@@ -260,4 +260,129 @@ export const updateExcelReport = (file, year, allEntries, allMetadata, balanceCo
 
         reader.readAsArrayBuffer(file);
     });
+};
+
+export const exportYearlyCSV = (year, allEntries, allMetadata, balanceCorrection = 0) => {
+    try {
+        const rows = [];
+        const months = [
+            'Janvāris', 'Februāris', 'Marts', 'Aprīlis', 'Maijs', 'Jūnijs',
+            'Jūlijs', 'Augusts', 'Septembris', 'Oktobris', 'Novembris', 'Decembris'
+        ];
+
+        let yearlyExpected = 0;
+        let yearlyReceived = 0;
+        let yearlyBalance = 0;
+
+        // --- 1. GADA KOPSAVILKUMS ---
+        rows.push(['GADA KOPSAVILKUMS']);
+        rows.push(['Mēnesis', 'Likme', 'Stundas', 'Pienākas', 'Bruto', 'Uz rokas', 'Kopā saņemts', 'Bilance']);
+
+        for (let month = 0; month < 12; month++) {
+            const key = `${year}-${month}`;
+            const meta = allMetadata[key] || { rate: 0, hours: 0 };
+            const rate = Number(meta.rate || 0);
+            const hours = Number(meta.hours || 0);
+            const expected = rate * hours;
+
+            let transfer = 0;
+            let cash = 0;
+
+            allEntries.forEach(entry => {
+                const d = new Date(entry.date);
+                if (d.getFullYear() === year && d.getMonth() === month) {
+                    if (entry.type === TRANSACTION_TYPES.CASH) {
+                        cash += Number(entry.amount);
+                    } else {
+                        transfer += Number(entry.amount);
+                    }
+                }
+            });
+
+            const received = transfer + cash;
+            const balance = expected - received;
+
+            yearlyExpected += expected;
+            yearlyReceived += received;
+            yearlyBalance += balance;
+
+            rows.push([
+                months[month],
+                rate || '-',
+                hours || '-',
+                expected.toFixed(2),
+                transfer.toFixed(2),
+                cash.toFixed(2),
+                received.toFixed(2),
+                balance.toFixed(2)
+            ]);
+        }
+
+        // Yearly Totals
+        rows.push([]);
+        rows.push(['KOPĀ GADĀ', '', '', yearlyExpected.toFixed(2), '', '', yearlyReceived.toFixed(2), yearlyBalance.toFixed(2)]);
+
+        // Correction
+        const finalBalance = yearlyBalance + balanceCorrection;
+        rows.push([]);
+        rows.push(['Korekcija', '', '', '', '', '', '', balanceCorrection.toFixed(2)]);
+        rows.push(['GALA BILANCE', '', '', '', '', '', '', finalBalance.toFixed(2)]);
+
+        // Timestamp
+        const now = new Date();
+        const timeStr = now.toLocaleString('lv-LV', { hour12: false });
+        rows.push([]);
+        rows.push(['Ģenerēts:', timeStr]);
+        rows.push([]);
+        rows.push([]);
+
+
+        // --- 2. VISI IERAKSTI ---
+        rows.push(['VISI IERAKSTI']);
+        rows.push(['Datums', 'Summa', 'Veids', 'Apraksts']);
+
+        const yearlyEntries = allEntries.filter(e => new Date(e.date).getFullYear() === year);
+
+        yearlyEntries.forEach(entry => {
+            const dateStr = new Date(entry.date).toLocaleDateString('lv-LV');
+            const typeStr = entry.type === TRANSACTION_TYPES.CASH ? 'Uz rokas' : 'Pārskaitījums';
+            // Escape quotes for CSV
+            const descSafe = `"${(entry.description || '').replace(/"/g, '""')}"`;
+
+            rows.push([
+                dateStr,
+                entry.amount,
+                typeStr,
+                descSafe
+            ]);
+        });
+
+
+        // Convert rows to CSV string
+        const csvContent = rows.map(row => row.join(',')).join('\n');
+
+        // Add BOM
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+        // Download
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            const dateStrFileName = now.toISOString().split('T')[0];
+            const timeStrFileName = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Maks_Parskats_${year}_${dateStrFileName}_${timeStrFileName}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export failed:', error);
+        return false;
+    }
 };
